@@ -1,0 +1,26 @@
+{
+	"name": "exnano/exn-wpmu-cf-dns-manager",
+	"type": "wordpress-plugin",
+	"license": "MIT",
+	"description": "Update Cloudflare DNS with new subdomain when create new Site for WordPress Multisite (multiple blogs).",
+	"homepage": "https://exnano.io",
+	"authors": [
+		{
+			"name": "Abdus Fauzi",
+			"homepage": "https://abdusfauzi.com"
+		}
+	],
+	"keywords": [
+		"wordpress",
+		"multisite",
+		"plugin",
+		"cloudflare"
+	],
+	"support": {
+		"issues": "https://github.com/exnano/exn-wpmu-cf-dns-manager/issues",
+		"forum": "https://github.com/exnano/exn-wpmu-cf-dns-manager/discussions"
+	},
+	"require": {
+		"php": ">=7.4.0"
+	}
+}
