@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => '42d56c86c35b25f2423d71edce74dc13c9f00afc',
+    'reference' => 'f3c90a998907d3b9e2c77c8fa6c7dc2be2eaca35',
     'name' => 'exnano/exn-wpmu-cf-dns-manager',
   ),
   'versions' => 
@@ -18,7 +18,7 @@
       'aliases' => 
       array (
       ),
-      'reference' => '42d56c86c35b25f2423d71edce74dc13c9f00afc',
+      'reference' => 'f3c90a998907d3b9e2c77c8fa6c7dc2be2eaca35',
     ),
   ),
 );

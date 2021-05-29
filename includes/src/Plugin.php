@@ -296,7 +296,7 @@ final class Plugin
     /**
      * plugin uninstall.
      */
-    public function uninstall()
+    public static function uninstall()
     {
         ( new self() )->deactivate_cleanup(true);
     }
