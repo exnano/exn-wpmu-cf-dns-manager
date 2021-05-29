@@ -4,7 +4,7 @@ Update Cloudflare with new DNS Record (CNAME subdomain) when create new Site usi
 
 
 ### Screenshot
-![Screenshot](assets/screenshots/screenshot_1.png)
+![Screenshot](.exnano.io/screenshot-1.png)
 
 
 ---

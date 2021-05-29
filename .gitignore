@@ -24,3 +24,8 @@ config.codekit*
 *.rar
 *.tar
 *.zip
+
+# nawawi
+run-*.sh
+.php_cs.cache
+/composer.lock

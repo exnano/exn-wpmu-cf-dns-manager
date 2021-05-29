@@ -20,7 +20,35 @@
 		"issues": "https://github.com/exnano/exn-wpmu-cf-dns-manager/issues",
 		"forum": "https://github.com/exnano/exn-wpmu-cf-dns-manager/discussions"
 	},
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/exnano/exn-wpmu-cf-dns-manager"
+        }
+    ],
 	"require": {
 		"php": ">=7.4.0"
-	}
+	},
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "post-update-cmd": [
+            "wp i18n make-pot . languages/exn-wpmu-cf-dns-manager.pot --exclude='dist/,wp-plugins-svn/'"
+        ]
+    },
+    "autoload": {
+        "psr-4": {
+            "ExnanoCreative\\ExnWpmuCfDnsManager\\": "includes/src"
+        },
+        "exclude-from-classmap": [
+            "/Tests/"
+        ],
+        "classmap": [
+            "includes/src"
+        ]
+    },
+    "config": {
+        "vendor-dir": "includes/vendor",
+        "optimize-autoloader": true
+    }
 }
