@@ -1,26 +1,50 @@
 {
-	"name": "exnano/exn-wpmu-cf-dns-manager",
-	"type": "wordpress-plugin",
-	"license": "MIT",
-	"description": "Update Cloudflare DNS with new subdomain when create new Site for WordPress Multisite (multiple blogs).",
-	"homepage": "https://exnano.io",
-	"authors": [
-		{
-			"name": "Abdus Fauzi",
-			"homepage": "https://abdusfauzi.com"
-		}
-	],
-	"keywords": [
-		"wordpress",
-		"multisite",
-		"plugin",
-		"cloudflare"
-	],
-	"support": {
-		"issues": "https://github.com/exnano/exn-wpmu-cf-dns-manager/issues",
-		"forum": "https://github.com/exnano/exn-wpmu-cf-dns-manager/discussions"
-	},
-	"require": {
-		"php": ">=7.4.0"
-	}
+    "name": "exnano/exn-wpmu-cf-dns-manager",
+    "type": "wordpress-plugin",
+    "license": "MIT",
+    "description": "Update Cloudflare DNS with new subdomain when create new Site for WordPress Multisite (multiple blogs).",
+    "homepage": "https://exnano.io",
+    "authors": [ {
+        "name": "Abdus Fauzi",
+        "homepage": "https://abdusfauzi.com"
+    } ],
+    "keywords": [
+        "wordpress",
+        "multisite",
+        "plugin",
+        "cloudflare"
+    ],
+    "support": {
+        "issues": "https://github.com/exnano/exn-wpmu-cf-dns-manager/issues",
+        "forum": "https://github.com/exnano/exn-wpmu-cf-dns-manager/discussions"
+    },
+    "repositories": [ {
+        "type": "vcs",
+        "url": "https://github.com/exnano/exn-wpmu-cf-dns-manager"
+    } ],
+    "require": {
+        "php": ">=7.4.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "post-update-cmd": [
+            "wp i18n make-pot . languages/exn-wpmu-cf-dns-manager.pot --exclude='dist/,wp-plugins-svn/'"
+        ]
+    },
+    "autoload": {
+        "psr-4": {
+            "ExnanoCreative\\ExnWpmuCfDnsManager\\": "includes/src"
+        },
+        "exclude-from-classmap": [
+            "/Tests/"
+        ],
+        "classmap": [
+            "includes/src"
+        ]
+    },
+    "config": {
+        "vendor-dir": "includes/vendor",
+        "optimize-autoloader": true
+    }
 }

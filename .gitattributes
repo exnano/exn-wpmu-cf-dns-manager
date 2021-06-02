@@ -1,0 +1,14 @@
+* text=auto
+
+/.gitattributes export-ignore
+/.github export-ignore
+/.gitignore export-ignore
+/.wordpress.org export-ignore
+/.exnano.io export-ignore
+/.phpcs.xml export-ignore
+/.php_cs export-ignore
+/phpunit.xml export-ignore
+/README.md export-ignore
+/changelog.txt export-ignore
+/tests export-ignore
+/vendor export-ignore
