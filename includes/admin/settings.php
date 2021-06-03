@@ -31,6 +31,7 @@ $action = add_query_arg('action', $this->plugin_page, 'edit.php');
         </div>
         <?php submit_button(); ?>
     </form>
+    <?php if ($this->has_token()) : ?>
     <br>
     <div>
         <h3 scope="row">
@@ -38,7 +39,8 @@ $action = add_query_arg('action', $this->plugin_page, 'edit.php');
         </h3>
         <div>
             <!-- <p><?php esc_html_e('List of zones (domains) that above API Token can access.', 'exn-wpmu-cf-dns-manager'); ?></p> -->
-            <?php $this->get_zones_list(); ?>
+            <?php echo $this->display_zones(); ?>
         </div>
     </div>
+    <?php endif; ?>
 </div>
