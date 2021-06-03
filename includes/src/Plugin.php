@@ -173,7 +173,6 @@ final class Plugin
             $response = Request::fetch_data();
         }
 
-        $response = Request::fetch_data();
         $network = get_network();
         $domain = $network->domain;
 
