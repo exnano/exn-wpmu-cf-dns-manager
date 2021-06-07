@@ -19,7 +19,6 @@ final class Plugin
     private $menu_parent;
     private $plugin_page;
     private $nonce_key;
-    private $cf_api_url;
     private $hook;
     private $path;
     private $screen;
@@ -35,7 +34,6 @@ final class Plugin
         $this->menu_parent = 'settings.php';
         $this->plugin_page = 'exn-wpmu-cf-dns-manager';
         $this->nonce_key = 'exn-validate';
-        $this->cf_api_url = 'https://api.cloudflare.com/client/v4/';
 
         $this->hook = plugin_basename(EXNANO_MUCFDNSM_FILE);
         $this->path = realpath(plugin_dir_path(EXNANO_MUCFDNSM_FILE));
@@ -51,9 +49,20 @@ final class Plugin
         add_action('network_admin_edit_'.$this->plugin_page, [$this, 'settings_save']);
         add_action('network_admin_notices', [$this, 'custom_notices']);
 
-        add_action('wp_insert_site', [$this, 'create_dns_record']);
-        // add_action( 'wp_delete_site', [$this, 'delete_dns_record' ] );
-        // do_action( 'wp_insert_site', WP_Site $new_site );
+        add_action('wp_insert_site', function ($site) {
+            Request::create_dns_record($site);
+            $this->remove_transient();
+        });
+
+        add_action('wp_update_site', function ($new_site, $old_site) {
+            Request::update_dns_record($new_site, $old_site);
+            $this->remove_transient();
+        }, PHP_INT_MAX, 2);
+
+        add_action('wp_delete_site', function ($old_sit) {
+            Request::delete_dns_record($old_site);
+            $this->remove_transient();
+        }, PHP_INT_MAX);
 
         add_action(
             'admin_enqueue_scripts',
@@ -62,7 +71,7 @@ final class Plugin
                 $version = \defined('EXNANO_MUCFDNSM_VERSION') ? EXNANO_MUCFDNSM_VERSION : date('ymdh');
 
                 if ($hook === $this->screen) {
-                    wp_enqueue_style($this->plugin_page.'-core', $plugin_url.'includes/admin/exnano.css', null, $version);
+                    wp_enqueue_style($this->plugin_page.'-core', $plugin_url.'includes/admin/exnano.css', null, $version.'x'.date('md'));
                 }
             }
         );
@@ -90,14 +99,21 @@ final class Plugin
         );
     }
 
+    /**
+     * settings_page.
+     */
     public function settings_page()
     {
         include_once $this->path.'/includes/admin/settings.php';
     }
 
+    /**
+     * settings_save.
+     */
     public function settings_save()
     {
         check_admin_referer($this->nonce_key);
+        $this->remove_transient();
 
         update_site_option('exn_cf_api_token', sanitize_text_field($_POST['exn_cf_api_token']));
 
@@ -115,20 +131,48 @@ final class Plugin
     }
 
     /**
-     * gcustom_notices.
+     * has_token.
+     */
+    public function has_token()
+    {
+        $token = get_site_option('exn_cf_api_token');
+
+        return !empty($token);
+    }
+
+    /**
+     * custom_notices.
      */
     public function custom_notices()
     {
-        if (isset($_GET['page']) && $_GET['page'] == $this->plugin_page && isset($_GET['updated'])) {
+        if (isset($_GET['updated']) && !empty($_GET['page']) && $this->plugin_page === sanitize_text_field($_GET['page'])) {
             echo '<div id="message" class="updated notice notice-success is-dismissible"><p>'.esc_html__('Settings updated', 'exn-wpmu-cf-dns-manager').'</p></div>';
         }
     }
 
-    /**
-     * get_zones_list.
-     */
-    public function get_zones_list()
+    /*public function notice($msg, $type = 'info', $is_dismiss = true)
     {
+        if (!empty($msg) && !empty($type)) {
+            add_action('network_admin_notices', function () {
+                $html = '<div id="exn-wpmu-cf-dns-manager-notice"';
+                $html .= 'class="notice notice-'.$type.($is_dismiss ? ' is-dismissible' : '').'"> ';
+                $html .= '<p>'.$msg.'</p>';
+                $html .= '</div>';
+                echo $html;
+            }, PHP_INT_MAX);
+        }
+    }*/
+
+    /**
+     * display_zones.
+     */
+    public function display_zones()
+    {
+        $response = get_site_transient('exncf/fetchdata');
+        if (empty($response) || !\is_array($response)) {
+            $response = Request::fetch_data();
+        }
+
         $network = get_network();
         $domain = $network->domain;
 
@@ -136,152 +180,103 @@ final class Plugin
             $domain = EXNANO_MUCFDNSM_TEST_DOMAIN;
         }
 
-        $response = null;
-        $token = get_site_option('exn_cf_api_token');
-        $url = $this->cf_api_url.'zones/';
-        $args = [
-            'headers' => [
-                'Authorization' => 'Bearer '.$token,
-            ],
-        ];
-
-        if (empty($token)) {
-            return false;
+        if (false === $response || (!\is_array($response) && 200 !== (int) $response)) {
+            /* translators: %s = domain */
+            return sprintf(__('<p>Invalid token for <strong>%1$s</strong>.<p>', 'exn-wpmu-cf-dns-manager'), $domain);
         }
 
-        // Make request to Cloudflare API zones endpoint.
-        $response = wp_remote_get($url, $args);
-        $response_code = wp_remote_retrieve_response_code($response);
+        set_site_transient('exncf/fetchdata', $response, 300);
 
-        if (200 === $response_code) {
-            $response = json_decode(wp_remote_retrieve_body($response), true);
+        $html = '';
+        if (1 < $response['result_info']['total_count']) {
+            $total_zones = $response['result_info']['total_count'];
+            /* translators: %1$s = zones, %2$s = domain */
+            $html .= sprintf(__("<p>It seems this API Token can access other domains (%1$s) than <strong>%2$s</strong>.</p>", 'exn-wpmu-cf-dns-manager'), $total_zones, $network->domain);
 
-            if (1 < $response['result_info']['total_count']) {
-                $total_zones = $response['result_info']['total_count'];
-                /* translators: %1$s = zones, %2$s = domain */
-                printf(__("<p>It seems this API Token can access other domains (%1$s) than <strong>%2$s</strong>.</p>", 'exn-wpmu-cf-dns-manager'), $total_zones, $network->domain);
-
-                /* translators: %s = domain */
-                printf(__('<p>Please limit the token Zone Resources to only <strong>%s</strong> to improve security.</p>', 'exn-wpmu-cf-dns-manager'), $network->domain);
-            }
-
-            // Now we can search if our domain is correctly assign permission to the token.
-            $domain = str_replace('www.', '', $domain);
-            $url_search = add_query_arg('name', $domain, $url);
-            $response = wp_remote_get($url_search, $args);
-            $response = json_decode(wp_remote_retrieve_body($response), true);
-
-            // echo '<pre>' . print_r( $response, true ) . '</pre>';
-
-            if (!isset($response['result'][0])) {
-                /* translators: %s = domain */
-                printf(__('<p>Invalid token for <strong>%s</strong>.<p>', 'exn-wpmu-cf-dns-manager'), $network->domain);
-                exit;
-            }
-
-            $domain_id = $response['result'][0]['id'];
-
-            // temporary saving domain id.
-            update_site_option('exn_cf_domain_id', $domain_id);
-
-            // Re-request for the exact zone.
-            $url_dns = $url.$domain_id.'/dns_records/';
-            $response = wp_remote_get($url_dns, $args);
-            $response = json_decode(wp_remote_retrieve_body($response), true);
-
-            // echo '<pre>' . print_r( $response, true ) . '</pre>';
-
-            // DNS records more than 0. Not Empty.
-            if (0 < $response['result_info']['total_count']) {
-                $dns_records = $response['result'];
-                $count = 1;
-                // echo '<pre>' . print_r( $zones, true ) . '</pre>';
-
-                echo '<table class="wp-list-table widefat striped">';
-                echo '<thead>';
-                echo '<tr>';
-                echo '<td class="check-column"></td>';
-                echo '<th class="">Type</th>';
-                echo '<th class="">Name</th>';
-                echo '<th class="">Content</th>';
-                echo '<th class="">TTL</th>';
-                echo '<th class="">Proxy Status</th>';
-                echo '</tr>';
-                echo '</thead>';
-                echo '<tbody>';
-
-                foreach ($dns_records as $dns_record) {
-                    $type = $dns_record['type'];
-                    $name = $dns_record['name'];
-                    $content = \array_key_exists('content', $dns_record) ? $dns_record['content'] : '';
-                    $ttl = \array_key_exists('ttl', $dns_record) ? $dns_record['ttl'] : '';
-                    $proxied = $dns_record['proxied'] ? '&check; Enabled' : '&#x2715; Disabled';
-
-                    echo '<tr>';
-                    echo '<td><strong>'.$count++.'.</strong></td>';
-                    echo '<td>'.$type.'</td>';
-                    echo '<td>'.$name.'</td>';
-                    echo '<td>'.wordwrap($content, 80, '<br>', true).'</td>';
-                    echo '<td>'.(1 === $ttl ? 'Auto' : $ttl).'</td>';
-                    echo '<td>'.$proxied.'</td>';
-                    echo '</tr>';
-                }
-                echo '</tbody>';
-                echo '</table>';
-            }
-        } else {
-            /* translators: %s = response code */
-            printf(__('<p>Response code: %s</p>', 'exn-wpmu-cf-dns-manager'), $response_code);
-            echo '<p>'.wp_remote_retrieve_response_message($response).'</p>';
+            /* translators: %s = domain */
+            $html .= sprintf(__('<p>Please limit the token Zone Resources to only <strong>%s</strong> to improve security.</p>', 'exn-wpmu-cf-dns-manager'), $network->domain);
         }
+
+        // Now we can search if our domain is correctly assign permission to the token.
+        $response = get_site_transient('exncf/fetchdomain');
+        if (empty($response) || !\is_array($response)) {
+            $response = Request::fetch_domain($domain);
+        }
+
+        if (empty($response) || !isset($response['result'][0])) {
+            /* translators: %s = domain */
+            $html .= sprintf(__('<p>Invalid permission for <strong>%s</strong>.<p>', 'exn-wpmu-cf-dns-manager'), $network->domain);
+
+            return $html;
+        }
+
+        set_site_transient('exncf/fetchdomain', $response, 300);
+
+        $domain_id = $response['result'][0]['id'];
+
+        // temporary saving domain id.
+        update_site_option('exn_cf_domain_id', $domain_id);
+
+        $response = get_site_transient('exncf/dnsrecord');
+        if (empty($response) || !\is_array($response)) {
+            $response = Request::fetch_dns_record($domain_id);
+        }
+
+        if (empty($response) || !\is_array($response) || empty($response['result_info']['total_count']) || !isset($response['result'][0])) {
+            /* translators: %s = domain */
+            $html .= sprintf(__('<p>No DNS Record Available for <strong>%s</strong>.<p>', 'exn-wpmu-cf-dns-manager'), $domain);
+
+            return $html;
+        }
+
+        set_site_transient('exncf/dnsrecord', $response, 300);
+
+        $dns_records = $response['result'];
+        $count = 1;
+
+        $html .= '<table class="wp-list-table widefat striped">';
+        $html .= '<thead>';
+        $html .= '<tr>';
+        $html .= '<td class="check-column"></td>';
+        $html .= '<th class="">Type</th>';
+        $html .= '<th class="">Name</th>';
+        $html .= '<th class="">Content</th>';
+        $html .= '<th class="">TTL</th>';
+        $html .= '<th class="">Proxy Status</th>';
+        $html .= '</tr>';
+        $html .= '</thead>';
+        $html .= '<tbody>';
+
+        foreach ($dns_records as $dns_record) {
+            $type = $dns_record['type'];
+            $name = $dns_record['name'];
+            $content = \array_key_exists('content', $dns_record) ? $dns_record['content'] : '';
+            $ttl = \array_key_exists('ttl', $dns_record) ? $dns_record['ttl'] : '';
+            $is_proxied = $dns_record['proxied'] ? true : false;
+            $proxied = $is_proxied ? '<span class="dashicons dashicons-yes"></span> Enabled' : '<span class="dashicons dashicons-no-alt"></span> Disabled';
+            $proxied_color = $is_proxied ? 'text-green' : 'text-red';
+
+            $html .= '<tr>';
+            $html .= '<td><strong>'.$count++.'.</strong></td>';
+            $html .= '<td>'.$type.'</td>';
+            $html .= '<td>'.$name.'</td>';
+            $html .= '<td>'.wordwrap($content, 80, '<br>', true).'</td>';
+            $html .= '<td>'.(1 === $ttl ? 'Auto' : $ttl).'</td>';
+            $html .= '<td class="'.$proxied_color.'">'.$proxied.'</td>';
+            $html .= '</tr>';
+        }
+
+        $html .= '</tbody>';
+        $html .= '</table>';
+
+        return $html;
     }
 
-    /**
-     * create_dns_record.
-     */
-    public function create_dns_record($new_site)
+    private function remove_transient()
     {
-        $token = get_site_option('exn_cf_api_token');
-        $zone_id = get_site_option('exn_cf_domain_id');
-
-        $network = get_network();
-        $domain = str_replace('www.', '', $network->domain);
-
-        // temporary override for development purpose.
-        if (\defined('WP_ENV') && 'production' === WP_ENV) {
-            $domain = $network->domain;
-        }
-
-        if (!empty($token)) {
-            $url = $this->cf_api_url.'zones/'.$zone_id.'/dns_records/';
-            $body = [
-                'type' => 'CNAME',
-                'name' => $new_site->domain,
-                'content' => $domain,
-                'ttl' => 1,
-                'proxied' => true,
-            ];
-
-            $args = [
-                'headers' => [
-                    'Authorization' => 'Bearer '.$token,
-                    'Content-Type' => 'application/json',
-                ],
-                'body' => wp_json_encode($body),
-            ];
-
-            $response = wp_remote_post($url, $args);
-            $response_code = wp_remote_retrieve_response_code($response);
-        }
-    }
-
-    /**
-     * delete_dns_record.
-     */
-    public function delete_dns_record($old_site)
-    {
-        // wp_remote_request() with method = DELETE.
-        // https://api.cloudflare.com/#dns-records-for-a-zone-delete-dns-record
+        delete_site_transient('exncf/fetchdata');
+        delete_site_transient('exncf/fetchdomain');
+        delete_site_transient('exncf/dnsrecord');
     }
 
     /**
@@ -291,6 +286,7 @@ final class Plugin
     {
         delete_site_option('exn_cf_api_token');
         delete_site_option('exn_cf_domain_id');
+        $this->remove_transient();
     }
 
     /**

@@ -8,4 +8,5 @@ $baseDir = dirname(dirname($vendorDir));
 return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'ExnanoCreative\\ExnWpmuCfDnsManager\\Plugin' => $baseDir . '/includes/src/Plugin.php',
+    'ExnanoCreative\\ExnWpmuCfDnsManager\\Request' => $baseDir . '/includes/src/Request.php',
 );

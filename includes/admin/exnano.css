@@ -1,3 +1,11 @@
 #exnano {
     max-width: 1440px;
 }
+
+#exnano .text-red {
+    color: red;
+}
+
+#exnano .text-green {
+    color: green;
+}

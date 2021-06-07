@@ -23,6 +23,7 @@ class ComposerStaticInit316add56bc0128589899f901acf98865
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'ExnanoCreative\\ExnWpmuCfDnsManager\\Plugin' => __DIR__ . '/../../..' . '/includes/src/Plugin.php',
+        'ExnanoCreative\\ExnWpmuCfDnsManager\\Request' => __DIR__ . '/../../..' . '/includes/src/Request.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

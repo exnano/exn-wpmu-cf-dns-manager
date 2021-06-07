@@ -29,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => 'f3c90a998907d3b9e2c77c8fa6c7dc2be2eaca35',
+    'reference' => 'c089a9514bb270677715b4c7be7dc520c60f398b',
     'name' => 'exnano/exn-wpmu-cf-dns-manager',
   ),
   'versions' => 
@@ -41,7 +41,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => 'f3c90a998907d3b9e2c77c8fa6c7dc2be2eaca35',
+      'reference' => 'c089a9514bb270677715b4c7be7dc520c60f398b',
     ),
   ),
 );

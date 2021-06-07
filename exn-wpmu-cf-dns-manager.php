@@ -13,6 +13,7 @@
  * Plugin Name:         EXN Multisite Cloudflare DNS Manager
  * Plugin URI:          https://github.com/exnano/exn-wpmu-cf-dns-manager/
  * Description:         Update Cloudflare DNS with new subdomain when create new Site.
+ * GitHub Plugin URI:   https://github.com/exnano/exn-wpmu-cf-dns-manager
  * Version:             0.0.3
  * Author:              Exnano Creative
  * Author URI:          https://github.com/exnano/exn-wpmu-cf-dns-manager/
