@@ -14,7 +14,7 @@
  * Plugin URI:          https://github.com/exnano/exn-wpmu-cf-dns-manager/
  * Description:         Update Cloudflare DNS with new subdomain when create new Site.
  * GitHub Plugin URI:   https://github.com/exnano/exn-wpmu-cf-dns-manager
- * Version:             0.0.3
+ * Version:             1.0.1
  * Author:              Exnano Creative
  * Author URI:          https://github.com/exnano/exn-wpmu-cf-dns-manager/
  * License:             MIT
@@ -22,8 +22,8 @@
  * Network:             true
  * Text Domain:         exn-wpmu-cf-dns-manager
  * Domain Path:         /languages
- * Requires at least:   5.6
- * Requires PHP:        7.4
+ * Requires at least:   6.4
+ * Requires PHP:        8.1
  */
 
 namespace ExnanoCreative\ExnWpmuCfDnsManager;
