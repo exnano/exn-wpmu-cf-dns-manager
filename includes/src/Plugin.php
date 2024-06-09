@@ -1,4 +1,5 @@
 <?php
+
 /**
  * EXN Multisite Cloudflare DNS Manager.
  *
@@ -23,6 +24,7 @@ final class Plugin
     private $path;
     private $screen;
     private $plugin_dir;
+    private $plugin_url;
 
     /**
      * constructor.
@@ -46,7 +48,7 @@ final class Plugin
         // unofficial constant: possible to disable nag notices
         !\defined('DISABLE_NAG_NOTICES') && \define('DISABLE_NAG_NOTICES', true);
 
-        add_action('network_admin_edit_'.$this->plugin_page, [$this, 'settings_save']);
+        add_action('network_admin_edit_' . $this->plugin_page, [$this, 'settings_save']);
         add_action('network_admin_notices', [$this, 'custom_notices']);
 
         add_action('wp_insert_site', function ($site) {
@@ -59,7 +61,7 @@ final class Plugin
             $this->remove_transient();
         }, PHP_INT_MAX, 2);
 
-        add_action('wp_delete_site', function ($old_sit) {
+        add_action('wp_delete_site', function ($old_site) {
             Request::delete_dns_record($old_site);
             $this->remove_transient();
         }, PHP_INT_MAX);
@@ -71,7 +73,7 @@ final class Plugin
                 $version = \defined('EXNANO_MUCFDNSM_VERSION') ? EXNANO_MUCFDNSM_VERSION : date('ymdh');
 
                 if ($hook === $this->screen) {
-                    wp_enqueue_style($this->plugin_page.'-core', $plugin_url.'includes/admin/exnano.css', null, $version.'x'.date('md'));
+                    wp_enqueue_style($this->plugin_page . '-core', $plugin_url . 'includes/admin/exnano.css', null, $version . 'x' . date('md'));
                 }
             }
         );
@@ -88,10 +90,10 @@ final class Plugin
         });
 
         add_filter(
-            'network_admin_plugin_action_links_'.$this->hook,
+            'network_admin_plugin_action_links_' . $this->hook,
             function ($links) {
                 $new = [
-                    'exnwpmucfdnsmanager-settings' => sprintf('<a href="%s">%s</a>', network_admin_url($this->menu_parent.'/?page='.$this->plugin_page), __('Settings', 'exn-wpmu-cf-dns-manager')),
+                    'exnwpmucfdnsmanager-settings' => sprintf('<a href="%s">%s</a>', network_admin_url($this->menu_parent . '/?page=' . $this->plugin_page), __('Settings', 'exn-wpmu-cf-dns-manager')),
                 ];
 
                 return array_merge($new, $links);
@@ -104,7 +106,7 @@ final class Plugin
      */
     public function settings_page()
     {
-        include_once $this->path.'/includes/admin/settings.php';
+        include_once $this->path . '/includes/admin/settings.php';
     }
 
     /**
@@ -119,8 +121,8 @@ final class Plugin
 
         $redirect = add_query_arg(
             [
-            'page' => $this->plugin_page,
-            'updated' => true,
+                'page' => $this->plugin_page,
+                'updated' => true,
             ],
             network_admin_url($this->menu_parent)
         );
@@ -146,7 +148,7 @@ final class Plugin
     public function custom_notices()
     {
         if (isset($_GET['updated']) && !empty($_GET['page']) && $this->plugin_page === sanitize_text_field($_GET['page'])) {
-            echo '<div id="message" class="updated notice notice-success is-dismissible"><p>'.esc_html__('Settings updated', 'exn-wpmu-cf-dns-manager').'</p></div>';
+            echo '<div id="message" class="updated notice notice-success is-dismissible"><p>' . esc_html__('Settings updated', 'exn-wpmu-cf-dns-manager') . '</p></div>';
         }
     }
 
@@ -191,7 +193,7 @@ final class Plugin
         if (1 < $response['result_info']['total_count']) {
             $total_zones = $response['result_info']['total_count'];
             /* translators: %1$s = zones, %2$s = domain */
-            $html .= sprintf(__("<p>It seems this API Token can access other domains (%1$s) than <strong>%2$s</strong>.</p>", 'exn-wpmu-cf-dns-manager'), $total_zones, $network->domain);
+            $html .= sprintf(__('<p>It seems this API Token can access other domains (%1$s) than <strong>%2$s</strong>.</p>', 'exn-wpmu-cf-dns-manager'), $total_zones, $network->domain);
 
             /* translators: %s = domain */
             $html .= sprintf(__('<p>Please limit the token Zone Resources to only <strong>%s</strong> to improve security.</p>', 'exn-wpmu-cf-dns-manager'), $network->domain);
@@ -204,8 +206,12 @@ final class Plugin
         }
 
         if (empty($response) || !isset($response['result'][0])) {
-            /* translators: %s = domain */
-            $html .= sprintf(__('<p>Invalid permission for <strong>%s</strong>.<p>', 'exn-wpmu-cf-dns-manager'), $network->domain);
+            $html .= sprintf(
+                /* translators: 1: Total zones 2: Domain */
+                __('<p>It seems this API Token can access other domains (%1$s) than <strong>%2$s</strong>.</p>', 'exn-wpmu-cf-dns-manager'),
+                $total_zones,
+                $network->domain
+            );
 
             return $html;
         }
@@ -257,12 +263,12 @@ final class Plugin
             $proxied_color = $is_proxied ? 'text-green' : 'text-red';
 
             $html .= '<tr>';
-            $html .= '<td><strong>'.$count++.'.</strong></td>';
-            $html .= '<td>'.$type.'</td>';
-            $html .= '<td>'.$name.'</td>';
-            $html .= '<td>'.wordwrap($content, 80, '<br>', true).'</td>';
-            $html .= '<td>'.(1 === $ttl ? 'Auto' : $ttl).'</td>';
-            $html .= '<td class="'.$proxied_color.'">'.$proxied.'</td>';
+            $html .= '<td><strong>' . $count++ . '.</strong></td>';
+            $html .= '<td>' . $type . '</td>';
+            $html .= '<td>' . $name . '</td>';
+            $html .= '<td>' . wordwrap($content, 80, '<br>', true) . '</td>';
+            $html .= '<td>' . (1 === $ttl ? 'Auto' : $ttl) . '</td>';
+            $html .= '<td class="' . $proxied_color . '">' . $proxied . '</td>';
             $html .= '</tr>';
         }
 
@@ -294,7 +300,7 @@ final class Plugin
      */
     public static function uninstall()
     {
-        ( new self() )->deactivate_cleanup(true);
+        (new self())->deactivate_cleanup(true);
     }
 
     /**
