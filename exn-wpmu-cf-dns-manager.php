@@ -31,7 +31,7 @@ namespace ExnanoCreative\ExnWpmuCfDnsManager;
 \defined('ABSPATH') && !\defined('EXNANO_MUCFDNSM_FILE') || exit;
 
 \define('EXNANO_MUCFDNSM_FILE', __FILE__);
-\define('EXNANO_MUCFDNSM_VERSION', '0.0.3');
+\define('EXNANO_MUCFDNSM_VERSION', '1.0.1');
 
 require __DIR__.'/includes/load.php';
 
